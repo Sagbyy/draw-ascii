@@ -1,0 +1,253 @@
+<h1 id="générateur-de-dessins-ascii-en-scala">Générateur de dessins
+ASCII en Scala</h1>
+<h2 id="contexte">Contexte</h2>
+<p>La société FunProg veut développer en Scala un générateur de dessin
+utilisable dans le terminal, sans interface graphique. Le programme
+devra lire une suite de commandes textuelles, les analyser, les
+interpréter, puis afficher un dessin ASCII dans le terminal.</p>
+<h2 id="notions-abordées-et-consignes">Notions abordées et
+consignes</h2>
+<p>L’objectif de ce projet sera de concevoir et écrire un programme
+<code>Scala</code> implémentant la spécification ci-après tout en
+mettant en pratique les notions fondamentales de la programmation
+fonctionnelle abordés: - pattern matching - récursivité - fonction ordre
+supérieur - manipulation de listes - immutabilité - types algébriques
+(<code>sealed trait</code>, <code>case class</code>) - séparation entre
+logique pure et entrées/sorties</p>
+<p>De plus le dit porgramme devra respecter les consignes suivantes
+(<code>Zéro</code> sera donné en cas de non-respect de ses
+consignes):</p>
+<ul>
+<li>il est <strong>INTERDIT</strong> d’utiliser le mot clé
+<code>return</code></li>
+<li>il est <strong>INTERDIT</strong> d’utiliser le mot-clé
+<code>while</code></li>
+<li>il est <strong>INTERDIT</strong> d’utiliser le mot-clé
+<code>null</code></li>
+<li>il est <strong>INTERDIT</strong> d’utiliser les expressions
+régulières</li>
+<li>tout <code>if</code> devra être <strong>exaustif</strong> (c-à-d
+avec un <code>else</code>)</li>
+<li>tout <code>pattern-matching</code> devra être
+<strong>exaustif</strong> (avec un cas par défaut sinon, ou sans warning
+si pas besoin de cas par défaut - avec <code>collect</code> par exemple
+- )</li>
+<li>la mutabilité explicite (<code>var</code>) ou implicite (struture de
+données mutables du package <code>scala.collection.mutable</code> comme
+<code>ArrayBuffer</code>) est <strong>INTERDITE</strong></li>
+<li>il sera <strong>INTERDIT</strong> de <code>throw</code> des
+exceptions, privilégier <code>Try</code> avec <code>exit</code> du
+programme en cas d’erreur fatale</li>
+<li>seules les implémentations valides (qui compilent) seront prises en
+compte et seules celles renvoyant un résultat correct donneront lieu à
+la totalité des points</li>
+</ul>
+<p>Un template de projet <code>sbt</code> sera fourni. Celui-ci servira
+de base pour les devéloppements. Il n’est pas permis de changer les
+options de compilateurs définis pour ce projet. De plus, il n’est pas
+permis d’importer des libs autres que celles fournies dans le template
+de projet <code>sbt</code>.</p>
+<h2 id="détail-du-programme">Détail du programme</h2>
+<ol type="1">
+<li>Objectif du projet</li>
+</ol>
+<p>Notre générateur de dessin sera capable d’interpréter un petit
+langage de dessin comme ceci:</p>
+<div class="sourceCode" id="cb1"><pre
+class="sourceCode txt"><code class="sourceCode default"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a>canvas 20 8</span>
+<span id="cb1-2"><a href="#cb1-2" aria-hidden="true" tabindex="-1"></a>point 2 3</span>
+<span id="cb1-3"><a href="#cb1-3" aria-hidden="true" tabindex="-1"></a>line 1 1 10 1</span>
+<span id="cb1-4"><a href="#cb1-4" aria-hidden="true" tabindex="-1"></a>rect 5 2 6 3</span></code></pre></div>
+<p>et d’afficher un résultat du type :</p>
+<div class="sourceCode" id="cb2"><pre
+class="sourceCode txt"><code class="sourceCode default"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a>....................</span>
+<span id="cb2-2"><a href="#cb2-2" aria-hidden="true" tabindex="-1"></a>.##########.........</span>
+<span id="cb2-3"><a href="#cb2-3" aria-hidden="true" tabindex="-1"></a>.....######.........</span>
+<span id="cb2-4"><a href="#cb2-4" aria-hidden="true" tabindex="-1"></a>..*..#....#.........</span>
+<span id="cb2-5"><a href="#cb2-5" aria-hidden="true" tabindex="-1"></a>.....######.........</span>
+<span id="cb2-6"><a href="#cb2-6" aria-hidden="true" tabindex="-1"></a>....................</span>
+<span id="cb2-7"><a href="#cb2-7" aria-hidden="true" tabindex="-1"></a>....................</span>
+<span id="cb2-8"><a href="#cb2-8" aria-hidden="true" tabindex="-1"></a>....................</span></code></pre></div>
+<p>Le caractère <code>.</code> représente une case vide. Les autres
+caractères représentent les éléments dessinés.</p>
+<ol start="2" type="1">
+<li>Fonctionnement attendu</li>
+</ol>
+<p>Le programme fonctionne dans le terminal. Il lit des commandes,
+construit une représentation interne du dessin, puis affiche la grille
+finale.</p>
+<p>Deux modes sont possibles selon votre choix : - mode interactif :
+l’utilisateur saisit les commandes une par une ; - mode script :
+l’utilisateur saisit plusieurs lignes, puis une commande
+<code>render</code> affiche le résultat.</p>
+<p>Exemple :</p>
+<div class="sourceCode" id="cb3"><pre
+class="sourceCode txt"><code class="sourceCode default"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a>AsciiDraw&gt; canvas 10 5</span>
+<span id="cb3-2"><a href="#cb3-2" aria-hidden="true" tabindex="-1"></a>AsciiDraw&gt; point 1 1</span>
+<span id="cb3-3"><a href="#cb3-3" aria-hidden="true" tabindex="-1"></a>AsciiDraw&gt; line 2 2 8 2</span>
+<span id="cb3-4"><a href="#cb3-4" aria-hidden="true" tabindex="-1"></a>AsciiDraw&gt; render</span>
+<span id="cb3-5"><a href="#cb3-5" aria-hidden="true" tabindex="-1"></a>..........</span>
+<span id="cb3-6"><a href="#cb3-6" aria-hidden="true" tabindex="-1"></a>.*........</span>
+<span id="cb3-7"><a href="#cb3-7" aria-hidden="true" tabindex="-1"></a>..#######.</span>
+<span id="cb3-8"><a href="#cb3-8" aria-hidden="true" tabindex="-1"></a>..........</span>
+<span id="cb3-9"><a href="#cb3-9" aria-hidden="true" tabindex="-1"></a>..........</span></code></pre></div>
+<p>Une commande comme <code>quit</code> ou <code>exit</code> permet de
+terminer le programme.</p>
+<ol start="3" type="1">
+<li>Fonctionnalités à implémenter</li>
+</ol>
+<p>Niveau 1 — Canevas et point</p>
+<p>Le programme doit reconnaître : - la création d’un canevas :
+<code>canvas largeur hauteur</code> - le dessin d’un point :
+<code>point x y</code></p>
+<p>Exemples :</p>
+<div class="sourceCode" id="cb4"><pre
+class="sourceCode txt"><code class="sourceCode default"><span id="cb4-1"><a href="#cb4-1" aria-hidden="true" tabindex="-1"></a>canvas 10 5</span>
+<span id="cb4-2"><a href="#cb4-2" aria-hidden="true" tabindex="-1"></a>point 3 2</span></code></pre></div>
+<p>Niveau 2 — Lignes horizontales et verticales</p>
+<p>Ajouter le dessin de lignes :</p>
+<div class="sourceCode" id="cb5"><pre
+class="sourceCode txt"><code class="sourceCode default"><span id="cb5-1"><a href="#cb5-1" aria-hidden="true" tabindex="-1"></a>line x1 y1 x2 y2</span></code></pre></div>
+<p>Dans une première version, vous pouvez limiter <code>line</code> aux
+lignes horizontales et verticales.</p>
+<p>Exemples :</p>
+<div class="sourceCode" id="cb6"><pre
+class="sourceCode txt"><code class="sourceCode default"><span id="cb6-1"><a href="#cb6-1" aria-hidden="true" tabindex="-1"></a>line 1 1 6 1</span>
+<span id="cb6-2"><a href="#cb6-2" aria-hidden="true" tabindex="-1"></a>line 4 1 4 4</span></code></pre></div>
+<p>Niveau 3 — Rectangles</p>
+<p>Ajouter :</p>
+<div class="sourceCode" id="cb7"><pre
+class="sourceCode txt"><code class="sourceCode default"><span id="cb7-1"><a href="#cb7-1" aria-hidden="true" tabindex="-1"></a>rect x y largeur hauteur</span></code></pre></div>
+<p>Le rectangle peut être dessiné uniquement avec son contour.</p>
+<p>Exemple :</p>
+<div class="sourceCode" id="cb8"><pre
+class="sourceCode txt"><code class="sourceCode default"><span id="cb8-1"><a href="#cb8-1" aria-hidden="true" tabindex="-1"></a>rect 2 1 5 3</span></code></pre></div>
+<p>Niveau 4 — Remplissage et effacement</p>
+<p>Ajouter une ou deux commandes parmi les suivantes :</p>
+<div class="sourceCode" id="cb9"><pre
+class="sourceCode txt"><code class="sourceCode default"><span id="cb9-1"><a href="#cb9-1" aria-hidden="true" tabindex="-1"></a>fill x y o</span>
+<span id="cb9-2"><a href="#cb9-2" aria-hidden="true" tabindex="-1"></a>clear</span>
+<span id="cb9-3"><a href="#cb9-3" aria-hidden="true" tabindex="-1"></a>setchar c</span></code></pre></div>
+<p>Interprétation possible : - <code>fill x y o</code> remplit avec le
+caractère <code>o</code> une zone connexe (point . différente de
+<code>#</code> ) - <code>clear</code> vide le canevas -
+<code>setchar -</code> change le caractère utilisé pour les dessins
+suivants en <code>-</code></p>
+<ol start="4" type="1">
+<li>Gestion d’erreurs</li>
+</ol>
+<p>Lors du parsing des données d’entrées, si les données attendues ne
+sont pas fournies ou ne sont pas au format attendu, aucune exception ne
+devra être <code>throw</code>. Il est recommandé de créer une hiérarchie
+d’erreur propre à votre programme et vos traitements.</p>
+<p>Le programme doit gérer proprement quelques erreurs simples : -
+commande inconnue - nombre d’arguments incorrect - coordonnées en dehors
+du canevas - tentative de dessiner avant la création d’un canevas -
+dimensions invalides</p>
+<p>Exemples :</p>
+<div class="sourceCode" id="cb10"><pre
+class="sourceCode txt"><code class="sourceCode default"><span id="cb10-1"><a href="#cb10-1" aria-hidden="true" tabindex="-1"></a>AsciiDraw&gt; point 2 3</span>
+<span id="cb10-2"><a href="#cb10-2" aria-hidden="true" tabindex="-1"></a>Erreur: aucun canevas n&#39;a été créé</span>
+<span id="cb10-3"><a href="#cb10-3" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb10-4"><a href="#cb10-4" aria-hidden="true" tabindex="-1"></a>AsciiDraw&gt; rect 1 2</span>
+<span id="cb10-5"><a href="#cb10-5" aria-hidden="true" tabindex="-1"></a>Erreur: nombre d&#39;arguments invalide pour rect</span></code></pre></div>
+<p>Voir <code>Try</code>ou <code>Either</code> pour gestion et
+propagation des erreurs. Veuillez aussi à bien limiter les effets de
+bord et gestions d’erreur aux frontières de votre programme
+(entrées/sorties) et non au coeur de celui-ci.</p>
+<ol start="5" type="1">
+<li>Exemples de tests attendus</li>
+</ol>
+<p>Votre programme doit au minimum réussir les cas suivants :</p>
+<table>
+<colgroup>
+<col style="width: 30%" />
+<col style="width: 69%" />
+</colgroup>
+<thead>
+<tr>
+<th>Entrée</th>
+<th>Résultat attendu</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>canvas 5 3</code> puis <code>render</code></td>
+<td>grille vide 5x3</td>
+</tr>
+<tr>
+<td><code>canvas 5 3</code> puis <code>point 1 1</code></td>
+<td>un caractère tracé à la position <code>(1,1)</code></td>
+</tr>
+<tr>
+<td><code>line 1 1 4 1</code></td>
+<td>ligne horizontale</td>
+</tr>
+<tr>
+<td><code>line 2 0 2 2</code></td>
+<td>ligne verticale</td>
+</tr>
+<tr>
+<td><code>rect 1 1 3 2</code></td>
+<td>rectangle dessiné correctement</td>
+</tr>
+<tr>
+<td><code>clear</code></td>
+<td>canevas vidé</td>
+</tr>
+</tbody>
+</table>
+<p>Le programme avec les commandes avancées suivantes:</p>
+<div class="sourceCode" id="cb11"><pre
+class="sourceCode txt"><code class="sourceCode default"><span id="cb11-1"><a href="#cb11-1" aria-hidden="true" tabindex="-1"></a>canvas 12 6</span>
+<span id="cb11-2"><a href="#cb11-2" aria-hidden="true" tabindex="-1"></a>setchar x</span>
+<span id="cb11-3"><a href="#cb11-3" aria-hidden="true" tabindex="-1"></a>line 11 1 11 4</span>
+<span id="cb11-4"><a href="#cb11-4" aria-hidden="true" tabindex="-1"></a>setchar #</span>
+<span id="cb11-5"><a href="#cb11-5" aria-hidden="true" tabindex="-1"></a>rect 2 1 6 4</span>
+<span id="cb11-6"><a href="#cb11-6" aria-hidden="true" tabindex="-1"></a>fill 3 2 o</span>
+<span id="cb11-7"><a href="#cb11-7" aria-hidden="true" tabindex="-1"></a>render</span></code></pre></div>
+<p>Devra produire le dessin suivant:</p>
+<div class="sourceCode" id="cb12"><pre
+class="sourceCode txt"><code class="sourceCode default"><span id="cb12-1"><a href="#cb12-1" aria-hidden="true" tabindex="-1"></a>............</span>
+<span id="cb12-2"><a href="#cb12-2" aria-hidden="true" tabindex="-1"></a>..######...x</span>
+<span id="cb12-3"><a href="#cb12-3" aria-hidden="true" tabindex="-1"></a>..#oooo#...x</span>
+<span id="cb12-4"><a href="#cb12-4" aria-hidden="true" tabindex="-1"></a>..#oooo#...x</span>
+<span id="cb12-5"><a href="#cb12-5" aria-hidden="true" tabindex="-1"></a>..######...x</span>
+<span id="cb12-6"><a href="#cb12-6" aria-hidden="true" tabindex="-1"></a>............</span></code></pre></div>
+<h2 id="bonus">Bonus</h2>
+<p>Si le projet de base est terminé, vous pouvez ajouter une section
+bonus avec les deux fonctionnalités suivantes.</p>
+<p>Historique des états</p>
+<p>Le programme conserve l’historique des dessins successifs afin de
+permettre une annulation.</p>
+<p>Exemple :</p>
+<div class="sourceCode" id="cb13"><pre
+class="sourceCode txt"><code class="sourceCode default"><span id="cb13-1"><a href="#cb13-1" aria-hidden="true" tabindex="-1"></a>AsciiDraw&gt; canvas 10 5</span>
+<span id="cb13-2"><a href="#cb13-2" aria-hidden="true" tabindex="-1"></a>AsciiDraw&gt; point 1 1</span>
+<span id="cb13-3"><a href="#cb13-3" aria-hidden="true" tabindex="-1"></a>AsciiDraw&gt; rect 3 1 4 2</span>
+<span id="cb13-4"><a href="#cb13-4" aria-hidden="true" tabindex="-1"></a>AsciiDraw&gt; undo</span></code></pre></div>
+<p>Après <code>undo</code>, le rectangle disparaît mais le point reste
+présent.</p>
+<h2 id="evaluation">Evaluation</h2>
+<p>Pour les groupes de 2 et de 3, un barème commun sera utilisé et
+celui-ci prendra en compte les différences entre les sujets.</p>
+<p>NB: Détails concernant le livrable:</p>
+<ul>
+<li>Le livrable à fournir est le projet <code>sbt</code> (issue du
+template de projet fourni).</li>
+<li>Les instructions pour lancer le projet et les tests devront être
+fournis si différents de ceux de base (<code>sbt run</code> et
+<code>sbt test</code>).</li>
+<li>Veuillez à ce que l’historique du projet puisse être consultable
+(ex: dossier git local/github/gitlab).</li>
+<li>Veuillez également rendre quelques exemples d’exécution du programme
+dans le terminal.</li>
+</ul>
+<p>Le projet sera évalué sur : 1. Correction: le programme fonctionne et
+produit les bons dessins 2. Qualité de modélisation: - bon usage des
+types algébriques - représentation du caneva, des commandes, de l’état
+(immutable) 3. Usage des notions de programmation fonctionnelle :
+récursivité, immutabilité, pattern matching, fonctions d’ordre supérieur
+4. Clarté du code: fonctions lisibles, découpage propre des composants
+du programme 5. Gestion des erreurs 6. Qualité des tests ou exemples
+fournis</p>
