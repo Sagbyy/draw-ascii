@@ -5,27 +5,27 @@ import scala.io.StdIn
 
 object Main:
   @main def asciiDraw(): Unit =
-    loop(None)
+    loop(Session.initial)
 
   @tailrec
-  private def loop(canvas: Option[Canvas]): Unit =
+  private def loop(session: Session): Unit =
     prompt()
     Option(StdIn.readLine()).map(_.trim) match
-      case None         => ()
-      case Some("")     => loop(canvas)
+      case None       => ()
+      case Some("")   => loop(session)
       case Some(line) =>
         Parser.parse(line) match
           case Right(Command.Quit) => ()
-          case parsed              => loop(step(canvas, parsed))
+          case parsed              => loop(step(session, parsed))
 
-  private def step(canvas: Option[Canvas], parsed: Either[AppError, Command]): Option[Canvas] =
-    parsed.flatMap(Interpreter.interpret(canvas, _)) match
+  private def step(session: Session, parsed: Either[AppError, Command]): Session =
+    parsed.flatMap(Interpreter.interpret(session, _)) match
       case Left(error) =>
         println(s"Erreur: ${error.message}")
-        canvas
+        session
       case Right(result) =>
         result.output.foreach(println)
-        result.canvas
+        result.session
 
   private def prompt(): Unit =
     print("AsciiDraw> ")

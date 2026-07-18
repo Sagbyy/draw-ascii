@@ -7,5 +7,8 @@ object Command:
   case class DrawPoint(x: Int, y: Int) extends Command
   case class DrawLine(x1: Int, y1: Int, x2: Int, y2: Int) extends Command
   case class DrawRect(x: Int, y: Int, width: Int, height: Int) extends Command
+  case class Fill(x: Int, y: Int, char: Char) extends Command
+  case class SetChar(char: Char) extends Command
+  case object Clear extends Command
   case object Render extends Command
   case object Quit extends Command

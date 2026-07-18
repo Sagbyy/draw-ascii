@@ -1,43 +1,47 @@
 package asciidraw
 
 object Interpreter:
-  case class Result(canvas: Option[Canvas], output: Option[String])
+  case class Result(session: Session, output: Option[String])
 
-  def interpret(canvas: Option[Canvas], command: Command): Either[AppError, Result] =
+  def interpret(session: Session, command: Command): Either[AppError, Result] =
     command match
       case Command.CreateCanvas(width, height) =>
-        Canvas.create(width, height).map(created => Result(Some(created), None))
+        Canvas.create(width, height).map(created => updated(session, created))
       case Command.DrawPoint(x, y) =>
-        drawPoint(canvas, x, y).map(drawn => Result(Some(drawn), None))
+        draw(session, List((x, y)), Canvas.pointChar)
       case Command.DrawLine(x1, y1, x2, y2) =>
-        drawLine(canvas, x1, y1, x2, y2).map(drawn => Result(Some(drawn), None))
+        linePoints(x1, y1, x2, y2).flatMap(points => draw(session, points, Canvas.lineChar))
       case Command.DrawRect(x, y, width, height) =>
-        drawRect(canvas, x, y, width, height).map(drawn => Result(Some(drawn), None))
+        checkDimensions(width, height)
+          .flatMap(_ => draw(session, Drawing.rectPoints(x, y, width, height), Canvas.lineChar))
+      case Command.Fill(x, y, char) =>
+        fill(session, x, y, char)
+      case Command.SetChar(char) =>
+        Right(Result(session.copy(drawChar = Some(char)), None))
+      case Command.Clear =>
+        requireCanvas(session).map(current => updated(session, current.cleared))
       case Command.Render =>
-        requireCanvas(canvas).map(current => Result(canvas, Some(current.render)))
+        requireCanvas(session).map(current => Result(session, Some(current.render)))
       case Command.Quit =>
-        Right(Result(canvas, None))
+        Right(Result(session, None))
 
-  private def drawPoint(canvas: Option[Canvas], x: Int, y: Int): Either[AppError, Canvas] =
-    requireCanvas(canvas).flatMap(current =>
-      if current.contains(x, y) then Right(current.withPixel(x, y, Canvas.pointChar))
-      else Left(AppError.OutOfBounds(x, y))
-    )
+  private def updated(session: Session, canvas: Canvas): Result =
+    Result(session.copy(canvas = Some(canvas)), None)
 
-  private def drawLine(canvas: Option[Canvas], x1: Int, y1: Int, x2: Int, y2: Int): Either[AppError, Canvas] =
+  private def draw(session: Session, points: List[(Int, Int)], defaultChar: Char): Either[AppError, Result] =
     for
-      current <- requireCanvas(canvas)
-      points <- Drawing.linePoints(x1, y1, x2, y2).toRight(AppError.DiagonalLine)
+      current <- requireCanvas(session)
       _ <- checkBounds(current, points)
-    yield current.withPixels(points, Canvas.lineChar)
+    yield updated(session, current.withPixels(points, session.drawChar.getOrElse(defaultChar)))
 
-  private def drawRect(canvas: Option[Canvas], x: Int, y: Int, width: Int, height: Int): Either[AppError, Canvas] =
+  private def fill(session: Session, x: Int, y: Int, char: Char): Either[AppError, Result] =
     for
-      current <- requireCanvas(canvas)
-      _ <- checkDimensions(width, height)
-      points = Drawing.rectPoints(x, y, width, height)
-      _ <- checkBounds(current, points)
-    yield current.withPixels(points, Canvas.lineChar)
+      current <- requireCanvas(session)
+      _ <- checkBounds(current, List((x, y)))
+    yield updated(session, current.withPixels(Drawing.fillZone(current, x, y).toList, char))
+
+  private def linePoints(x1: Int, y1: Int, x2: Int, y2: Int): Either[AppError, List[(Int, Int)]] =
+    Drawing.linePoints(x1, y1, x2, y2).toRight(AppError.DiagonalLine)
 
   private def checkDimensions(width: Int, height: Int): Either[AppError, Unit] =
     if width > 0 && height > 0 then Right(())
@@ -48,5 +52,5 @@ object Interpreter:
       case Some((x, y)) => Left(AppError.OutOfBounds(x, y))
       case None         => Right(())
 
-  private def requireCanvas(canvas: Option[Canvas]): Either[AppError, Canvas] =
-    canvas.toRight(AppError.NoCanvas)
+  private def requireCanvas(session: Session): Either[AppError, Canvas] =
+    session.canvas.toRight(AppError.NoCanvas)

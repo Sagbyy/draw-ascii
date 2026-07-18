@@ -10,6 +10,9 @@ case class Canvas(width: Int, height: Int, pixels: Map[(Int, Int), Char]):
   def withPixels(points: List[(Int, Int)], char: Char): Canvas =
     points.foldLeft(this) { case (canvas, (x, y)) => canvas.withPixel(x, y, char) }
 
+  def cleared: Canvas =
+    copy(pixels = Map.empty)
+
   def charAt(x: Int, y: Int): Char =
     pixels.getOrElse((x, y), Canvas.emptyChar)
 

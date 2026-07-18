@@ -19,6 +19,9 @@ object AppError:
   case class OutOfBounds(x: Int, y: Int) extends AppError:
     def message: String = s"coordonnées ($x, $y) en dehors du canevas"
 
+  case class InvalidChar(value: String) extends AppError:
+    def message: String = s"caractère invalide: $value"
+
   case object DiagonalLine extends AppError:
     def message: String = "seules les lignes horizontales et verticales sont supportées"
 
