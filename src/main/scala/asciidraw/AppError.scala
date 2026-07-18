@@ -27,3 +27,9 @@ object AppError:
 
   case object NoCanvas extends AppError:
     def message: String = "aucun canevas n'a été créé"
+
+  case object NothingToUndo extends AppError:
+    def message: String = "rien à annuler"
+
+  case object NothingToRedo extends AppError:
+    def message: String = "rien à rétablir"

@@ -10,5 +10,7 @@ object Command:
   case class Fill(x: Int, y: Int, char: Char) extends Command
   case class SetChar(char: Char) extends Command
   case object Clear extends Command
+  case object Undo extends Command
+  case object Redo extends Command
   case object Render extends Command
   case object Quit extends Command

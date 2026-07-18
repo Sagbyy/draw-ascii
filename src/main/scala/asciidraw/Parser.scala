@@ -10,6 +10,8 @@ object Parser:
       case "fill" :: args                      => parseFill(args)
       case "setchar" :: args                   => parseSetChar(args)
       case "clear" :: args                     => parseNoArgs("clear", Command.Clear, args)
+      case "undo" :: args                      => parseNoArgs("undo", Command.Undo, args)
+      case "redo" :: args                      => parseNoArgs("redo", Command.Redo, args)
       case "render" :: args                    => parseNoArgs("render", Command.Render, args)
       case (name @ ("quit" | "exit")) :: args  => parseNoArgs(name, Command.Quit, args)
       case name :: _                           => Left(AppError.UnknownCommand(name))

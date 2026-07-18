@@ -1,7 +1,7 @@
 package asciidraw
 
 class InterpreterSuite extends munit.FunSuite:
-  private val session = Session(Canvas.create(10, 5).toOption, None)
+  private val session = Session.initial.copy(canvas = Canvas.create(10, 5).toOption)
 
   private def interpretAll(commands: List[Command]): Either[AppError, Interpreter.Result] =
     commands.foldLeft(Right(Interpreter.Result(Session.initial, None)): Either[AppError, Interpreter.Result])(
@@ -122,6 +122,46 @@ class InterpreterSuite extends munit.FunSuite:
       "............"
     ).mkString("\n")
     assertEquals(rendered, Right(Some(expected)))
+
+  test("undo example from the assignment"):
+    val rendered = renderAfter(
+      List(
+        Command.CreateCanvas(10, 5),
+        Command.DrawPoint(1, 1),
+        Command.DrawRect(3, 1, 4, 2),
+        Command.Undo,
+        Command.Render
+      )
+    )
+    assertEquals(rendered, Right(Some("..........\n.*........\n..........\n..........\n..........")))
+
+  test("undo canvas creation restores the absence of canvas"):
+    val result = interpretAll(List(Command.CreateCanvas(4, 2), Command.Undo, Command.Render))
+    assertEquals(result, Left(AppError.NoCanvas))
+
+  test("undo with empty history"):
+    assertEquals(Interpreter.interpret(Session.initial, Command.Undo), Left(AppError.NothingToUndo))
+
+  test("redo restores an undone drawing"):
+    val rendered = renderAfter(
+      List(Command.CreateCanvas(4, 2), Command.DrawPoint(1, 1), Command.Undo, Command.Redo, Command.Render)
+    )
+    assertEquals(rendered, Right(Some("....\n.*..")))
+
+  test("redo with nothing undone"):
+    assertEquals(Interpreter.interpret(session, Command.Redo), Left(AppError.NothingToRedo))
+
+  test("a new drawing clears the redo stack"):
+    val result = interpretAll(
+      List(Command.CreateCanvas(4, 2), Command.DrawPoint(1, 1), Command.Undo, Command.DrawPoint(2, 1))
+    )
+    assertEquals(result.flatMap(r => Interpreter.interpret(r.session, Command.Redo)), Left(AppError.NothingToRedo))
+
+  test("setchar is not affected by undo"):
+    val result = interpretAll(
+      List(Command.CreateCanvas(4, 2), Command.SetChar('x'), Command.Undo)
+    )
+    assertEquals(result.map(_.session.drawChar), Right(Some('x')))
 
   test("render outputs the grid"):
     val rendered = renderAfter(List(Command.CreateCanvas(5, 3), Command.Render))

@@ -22,6 +22,11 @@ class ParserSuite extends munit.FunSuite:
   test("parse clear"):
     assertEquals(Parser.parse("clear"), Right(Command.Clear))
 
+  test("parse undo and redo"):
+    assertEquals(Parser.parse("undo"), Right(Command.Undo))
+    assertEquals(Parser.parse("redo"), Right(Command.Redo))
+    assertEquals(Parser.parse("undo 1"), Left(AppError.InvalidArgumentCount("undo")))
+
   test("parse rejects invalid char"):
     assertEquals(Parser.parse("setchar ab"), Left(AppError.InvalidChar("ab")))
     assertEquals(Parser.parse("fill 3 2 ab"), Left(AppError.InvalidChar("ab")))

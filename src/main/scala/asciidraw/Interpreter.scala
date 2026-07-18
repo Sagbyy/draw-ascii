@@ -20,13 +20,42 @@ object Interpreter:
         Right(Result(session.copy(drawChar = Some(char)), None))
       case Command.Clear =>
         requireCanvas(session).map(current => updated(session, current.cleared))
+      case Command.Undo =>
+        undo(session)
+      case Command.Redo =>
+        redo(session)
       case Command.Render =>
         requireCanvas(session).map(current => Result(session, Some(current.render)))
       case Command.Quit =>
         Right(Result(session, None))
 
   private def updated(session: Session, canvas: Canvas): Result =
-    Result(session.copy(canvas = Some(canvas)), None)
+    Result(
+      session.copy(canvas = Some(canvas), undoStack = session.canvas :: session.undoStack, redoStack = Nil),
+      None
+    )
+
+  private def undo(session: Session): Either[AppError, Result] =
+    session.undoStack match
+      case previous :: rest =>
+        Right(
+          Result(
+            session.copy(canvas = previous, undoStack = rest, redoStack = session.canvas :: session.redoStack),
+            None
+          )
+        )
+      case Nil => Left(AppError.NothingToUndo)
+
+  private def redo(session: Session): Either[AppError, Result] =
+    session.redoStack match
+      case next :: rest =>
+        Right(
+          Result(
+            session.copy(canvas = next, undoStack = session.canvas :: session.undoStack, redoStack = rest),
+            None
+          )
+        )
+      case Nil => Left(AppError.NothingToRedo)
 
   private def draw(session: Session, points: List[(Int, Int)], defaultChar: Char): Either[AppError, Result] =
     for
