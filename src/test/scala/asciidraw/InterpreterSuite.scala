@@ -49,6 +49,25 @@ class InterpreterSuite extends munit.FunSuite:
     val result = Interpreter.interpret(canvas, Command.DrawLine(8, 1, 12, 1))
     assertEquals(result, Left(AppError.OutOfBounds(10, 1)))
 
+  test("draw rect outline"):
+    val rendered = renderAfter(List(Command.CreateCanvas(6, 4), Command.DrawRect(1, 1, 3, 2), Command.Render))
+    assertEquals(rendered, Right(Some("......\n.###..\n.###..\n......")))
+
+  test("draw rect with hollow center"):
+    val rendered = renderAfter(List(Command.CreateCanvas(6, 5), Command.DrawRect(1, 1, 4, 3), Command.Render))
+    assertEquals(rendered, Right(Some("......\n.####.\n.#..#.\n.####.\n......")))
+
+  test("draw rect before canvas creation"):
+    assertEquals(Interpreter.interpret(None, Command.DrawRect(1, 1, 3, 2)), Left(AppError.NoCanvas))
+
+  test("draw rect with invalid dimensions"):
+    val result = Interpreter.interpret(canvas, Command.DrawRect(1, 1, 0, 2))
+    assertEquals(result, Left(AppError.InvalidDimensions(0, 2)))
+
+  test("draw rect out of bounds"):
+    val result = Interpreter.interpret(canvas, Command.DrawRect(7, 1, 5, 2))
+    assertEquals(result, Left(AppError.OutOfBounds(10, 1)))
+
   test("render outputs the grid"):
     val rendered = renderAfter(List(Command.CreateCanvas(5, 3), Command.Render))
     assertEquals(rendered, Right(Some(".....\n.....\n.....")))

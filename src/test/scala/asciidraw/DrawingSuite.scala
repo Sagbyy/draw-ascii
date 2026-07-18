@@ -15,3 +15,15 @@ class DrawingSuite extends munit.FunSuite:
 
   test("diagonal line is not supported"):
     assertEquals(Drawing.linePoints(0, 0, 3, 3), None)
+
+  test("rect points form an outline"):
+    val points = Drawing.rectPoints(1, 1, 3, 3).toSet
+    val expected = Set((1, 1), (2, 1), (3, 1), (1, 2), (3, 2), (1, 3), (2, 3), (3, 3))
+    assertEquals(points, expected)
+
+  test("rect points have no duplicates"):
+    val points = Drawing.rectPoints(0, 0, 2, 2)
+    assertEquals(points.size, points.toSet.size)
+
+  test("1x1 rect is a single point"):
+    assertEquals(Drawing.rectPoints(2, 3, 1, 1), List((2, 3)))

@@ -6,6 +6,7 @@ object Parser:
       case "canvas" :: args        => parseCanvas(args)
       case "point" :: args         => parsePoint(args)
       case "line" :: args          => parseLine(args)
+      case "rect" :: args          => parseRect(args)
       case "render" :: Nil         => Right(Command.Render)
       case ("quit" | "exit") :: Nil => Right(Command.Quit)
       case name :: _               => Left(AppError.UnknownCommand(name))
@@ -42,6 +43,17 @@ object Parser:
           py2 <- parseInt(y2)
         yield Command.DrawLine(px1, py1, px2, py2)
       case _ => Left(AppError.InvalidArgumentCount("line"))
+
+  private def parseRect(args: List[String]): Either[AppError, Command] =
+    args match
+      case x :: y :: width :: height :: Nil =>
+        for
+          px <- parseInt(x)
+          py <- parseInt(y)
+          w <- parseInt(width)
+          h <- parseInt(height)
+        yield Command.DrawRect(px, py, w, h)
+      case _ => Left(AppError.InvalidArgumentCount("rect"))
 
   private def parseInt(value: String): Either[AppError, Int] =
     value.toIntOption.toRight(AppError.InvalidNumber(value))

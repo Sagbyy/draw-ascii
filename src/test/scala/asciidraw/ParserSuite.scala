@@ -10,6 +10,9 @@ class ParserSuite extends munit.FunSuite:
   test("parse line"):
     assertEquals(Parser.parse("line 1 1 6 1"), Right(Command.DrawLine(1, 1, 6, 1)))
 
+  test("parse rect"):
+    assertEquals(Parser.parse("rect 2 1 5 3"), Right(Command.DrawRect(2, 1, 5, 3)))
+
   test("parse render"):
     assertEquals(Parser.parse("render"), Right(Command.Render))
 
@@ -27,6 +30,7 @@ class ParserSuite extends munit.FunSuite:
     assertEquals(Parser.parse("canvas 10"), Left(AppError.InvalidArgumentCount("canvas")))
     assertEquals(Parser.parse("point 1 2 3"), Left(AppError.InvalidArgumentCount("point")))
     assertEquals(Parser.parse("line 1 2"), Left(AppError.InvalidArgumentCount("line")))
+    assertEquals(Parser.parse("rect 1 2"), Left(AppError.InvalidArgumentCount("rect")))
 
   test("parse rejects non-numeric arguments"):
     assertEquals(Parser.parse("point a 2"), Left(AppError.InvalidNumber("a")))
