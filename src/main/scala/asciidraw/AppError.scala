@@ -19,5 +19,8 @@ object AppError:
   case class OutOfBounds(x: Int, y: Int) extends AppError:
     def message: String = s"coordonnées ($x, $y) en dehors du canevas"
 
+  case object DiagonalLine extends AppError:
+    def message: String = "seules les lignes horizontales et verticales sont supportées"
+
   case object NoCanvas extends AppError:
     def message: String = "aucun canevas n'a été créé"

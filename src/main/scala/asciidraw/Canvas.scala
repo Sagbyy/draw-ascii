@@ -7,6 +7,9 @@ case class Canvas(width: Int, height: Int, pixels: Map[(Int, Int), Char]):
   def withPixel(x: Int, y: Int, char: Char): Canvas =
     copy(pixels = pixels + ((x, y) -> char))
 
+  def withPixels(points: List[(Int, Int)], char: Char): Canvas =
+    points.foldLeft(this) { case (canvas, (x, y)) => canvas.withPixel(x, y, char) }
+
   def charAt(x: Int, y: Int): Char =
     pixels.getOrElse((x, y), Canvas.emptyChar)
 
@@ -19,6 +22,7 @@ case class Canvas(width: Int, height: Int, pixels: Map[(Int, Int), Char]):
 object Canvas:
   val emptyChar: Char = '.'
   val pointChar: Char = '*'
+  val lineChar: Char = '#'
 
   def create(width: Int, height: Int): Either[AppError, Canvas] =
     if width > 0 && height > 0 then Right(Canvas(width, height, Map.empty))
